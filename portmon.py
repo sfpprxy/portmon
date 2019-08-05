@@ -23,7 +23,7 @@ if not data_file.is_file():
         fd.write(json.dumps(data))
 else:
     with open(data_file) as fd:
-        usage_disk = json.load(fd)
+        usage_disk = json.load(str(fd))
 
 
 def get_iptable():
