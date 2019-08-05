@@ -13,7 +13,7 @@ ports = ['9999', '9998', '9997', '9996', '9995']
 usage_disk = {}
 usage_last = {}
 
-data_file = Path(os.path.join(os.getcwd(), 'data'))
+data_file = Path(os.path.join(str(Path.home()), '.portmon', 'data'))
 data_path = str(data_file)
 if not data_file.is_file():
     with open(data_path, 'w') as fd:
@@ -71,6 +71,8 @@ def job():
 
         for port, out in usage.items():
             last = usage_last.get(port, 0)
+            if usage_disk[port] == 0:
+                usage_disk[port] = out
             if out < last:
                 usage_last[port] = out
             if last == 0:
@@ -82,7 +84,7 @@ def job():
 
         with open(data_path, 'w') as fd:
             fd.write(json.dumps(usage_disk))
-        time.sleep(60)
+        time.sleep(3)
 
 
 def get_statistic(port):
