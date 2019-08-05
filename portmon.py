@@ -3,7 +3,8 @@ import subprocess
 
 
 def get_res():
-    return subprocess.check_output(['iptables','-L','-v'])
+    output = subprocess.check_output(['iptables', '-L', '-v', '-n', '-x'])
+    return output.decode("utf-8").splitlines()
 
 
 def add_ports_to_mon(unmoned_ports):
