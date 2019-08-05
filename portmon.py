@@ -77,9 +77,10 @@ def job():
                 usage_last[port] = out
             if last == 0:
                 usage_last[port] = usage_disk[port]
-            diff = out - last
-            usage_disk[port] += diff
-            usage_last[port] = out
+            else:
+                diff = out - last
+                usage_disk[port] += diff
+                usage_last[port] = out
 
         print(usage_disk)
         with open(data_path, 'w') as fd:
