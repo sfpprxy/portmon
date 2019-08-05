@@ -70,7 +70,6 @@ def job():
             port = so[-1][4:]
             usage[port] = int(out)
 
-        # global last_usage
         for port, out in usage.items():
             last = usage_last.get(port, 0)
             if out < last:
@@ -82,10 +81,9 @@ def job():
                 usage_disk[port] += diff
                 usage_last[port] = out
 
-        print(usage_disk)
         with open(data_path, 'w') as fd:
             fd.write(json.dumps(usage_disk))
-        time.sleep(5)
+        time.sleep(60)
 
 
 def get_statistic(port):
@@ -98,15 +96,14 @@ def get_statistic(port):
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
+    paths = {
+        '/': {'status': 200}
+    }
+    for p in ports:
+        paths['/' + p] = {'status': 200}
+
     def do_GET(self):
-        paths = {
-            '/': {'status': 200},
-            '/9999': {'status': 200},
-            '/9998': {'status': 200},
-            '/9997': {'status': 200},
-            '/9996': {'status': 200}
-        }
-        if self.path in paths:
+        if self.path in self.paths:
             self.send_response(200)
             self.end_headers()
             self.wfile.write(get_statistic(self.path[1:]).encode('utf-8'))
