@@ -1,0 +1,34 @@
+Chain INPUT (policy ACCEPT 2008 packets, 185K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+ 2892  189K f2b-sshd   tcp  --  any    any     anywhere             anywhere             multiport dports 4422
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DOCKER-USER  all  --  any    any     anywhere             anywhere            
+    0     0 DOCKER-ISOLATION  all  --  any    any     anywhere             anywhere            
+    0     0 ACCEPT     all  --  any    docker0  anywhere             anywhere             ctstate RELATED,ESTABLISHED
+    0     0 DOCKER     all  --  any    docker0  anywhere             anywhere            
+    0     0 ACCEPT     all  --  docker0 !docker0  anywhere             anywhere            
+    0     0 ACCEPT     all  --  docker0 docker0  anywhere             anywhere            
+
+Chain OUTPUT (policy ACCEPT 1816 packets, 116K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+49589 6055K            tcp  --  any    any     anywhere             anywhere             tcp spt:9999
+    0     0            tcp  --  any    any     anywhere             anywhere             tcp spt:9998
+    0     0            tcp  --  any    any     anywhere             anywhere             tcp spt:9997
+
+Chain DOCKER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain DOCKER-ISOLATION (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 RETURN     all  --  any    any     anywhere             anywhere            
+
+Chain DOCKER-USER (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 RETURN     all  --  any    any     anywhere             anywhere            
+
+Chain f2b-sshd (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+ 2892  189K RETURN     all  --  any    any     anywhere             anywhere            
+
