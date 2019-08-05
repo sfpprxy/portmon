@@ -3,9 +3,7 @@ import subprocess
 
 
 def get_res():
-    with open('/Users/joe/Dropbox/Work/portmon/ipval') as fp:
-        # return subprocess.check_output(['iptables','-L','-v'])
-        return fp.readlines()
+    return subprocess.check_output(['iptables','-L','-v'])
 
 
 def add_ports_to_mon(unmoned_ports):
