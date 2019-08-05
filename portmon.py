@@ -23,12 +23,15 @@ if not data_file.is_file():
         fd.write(json.dumps(data))
 else:
     with open(str(data_file)) as fd:
-        usage_disk = json.load(str(fd))
+        usage_disk = json.load(fd)
 
 
 def get_iptable():
-    output = subprocess.check_output(['iptables', '-L', '-v', '-n', '-x'])
-    return output.decode("utf-8").splitlines()
+    # output = subprocess.check_output(['iptables', '-L', '-v', '-n', '-x'])
+    # output = b'Chain INPUT (policy ACCEPT 16763734 packets, 16357775418 bytes)\n    pkts      bytes target     prot opt in     out     source               destination         \n    5975   407369 f2b-sshd   tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            multiport dports 4422\n\nChain FORWARD (policy DROP 0 packets, 0 bytes)\n    pkts      bytes target     prot opt in     out     source               destination         \n       0        0 DOCKER-USER  all  --  *      *       0.0.0.0/0            0.0.0.0/0           \n       0        0 DOCKER-ISOLATION  all  --  *      *       0.0.0.0/0            0.0.0.0/0           \n       0        0 ACCEPT     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED\n       0        0 DOCKER     all  --  *      docker0  0.0.0.0/0            0.0.0.0/0           \n       0        0 ACCEPT     all  --  docker0 !docker0  0.0.0.0/0            0.0.0.0/0           \n       0        0 ACCEPT     all  --  docker0 docker0  0.0.0.0/0            0.0.0.0/0           \n\nChain OUTPUT (policy ACCEPT 12281260 packets, 15806068588 bytes)\n    pkts      bytes target     prot opt in     out     source               destination         \n 8688709 11148015386            tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp spt:9999\n 1500556 4274300891            tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp spt:9998\n      22     1092            tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp spt:9997\n\nChain DOCKER (1 references)\n    pkts      bytes target     prot opt in     out     source               destination         \n\nChain DOCKER-ISOLATION (1 references)\n    pkts      bytes target     prot opt in     out     source               destination         \n       0        0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           \n\nChain DOCKER-USER (1 references)\n    pkts      bytes target     prot opt in     out     source               destination         \n       0        0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           \n\nChain f2b-sshd (1 references)\n    pkts      bytes target     prot opt in     out     source               destination         \n    5975   407369 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0           \n'
+    # return output.decode("utf-8").splitlines()
+    with open('/Users/joe/Dropbox/Work/portmon/ipval') as fp:
+        return fp.readlines()
 
 
 def add_ports_to_mon(unmoned_ports):
@@ -61,7 +64,7 @@ def job():
                     moned_list.append(e)
                     moned_ports.append(p)
         unmoned_ports = set(ports) - set(moned_ports)
-        add_ports_to_mon(unmoned_ports)
+        # add_ports_to_mon(unmoned_ports)
 
         usage = {}
         for o in moned_list:
