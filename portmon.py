@@ -11,7 +11,7 @@ from pathlib import Path
 # TODO read ports from conf file
 ports = ['9999', '9998', '9997', '9996', '9995']
 usage_disk = {}
-last_usage = {}
+usage_last = {}
 
 data_file = Path(os.path.join(os.getcwd(), 'data'))
 data_path = str(data_file)
@@ -72,12 +72,14 @@ def job():
 
         # global last_usage
         for port, out in usage.items():
-            last = last_usage.get(port, 0)
+            last = usage_last.get(port, 0)
             if out < last:
-                last_usage[port] = out
+                usage_last[port] = out
+            if last == 0:
+                usage_last[port] = usage_disk[port]
             diff = out - last
             usage_disk[port] += diff
-            last_usage[port] = out
+            usage_last[port] = out
 
         print(usage_disk)
         with open(data_path, 'w') as fd:
