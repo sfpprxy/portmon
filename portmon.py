@@ -87,6 +87,15 @@ def job():
 
 
 def get_statistic(port):
+    if not port:
+        res = ""
+        for p in ports:
+            b = usage_disk[port]
+            kb = int(b / 1024)
+            gb = round(kb / 1024 / 1024, 2)
+            rmb = gb
+            res += "Port {} data usage: {}KB = {}GB => Bill: {}RMB\n".format(port, kb, gb, rmb)
+        return res
     b = usage_disk[port]
     kb = int(b / 1024)
     gb = round(kb / 1024 / 1024, 2)
