@@ -22,7 +22,7 @@ if not data_file.is_file():
             data[p] = 0
         fd.write(json.dumps(data))
 else:
-    with open(data_file) as fd:
+    with open(str(data_file)) as fd:
         usage_disk = json.load(str(fd))
 
 
