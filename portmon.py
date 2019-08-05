@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 # TODO read ports from conf file
-ports = [9999, 9998, 9997, 9996, 9995]
+ports = ['9999', '9998', '9997', '9996', '9995']
 usage_disk = {}
 last_usage = {}
 
@@ -60,7 +60,7 @@ def job():
         moned_ports = []
         for e in full_outputs_list:
             for p in ports:
-                if "spt:" + str(p) in e:
+                if "spt:" + p in e:
                     moned_list.append(e)
                     moned_ports.append(p)
         unmoned_ports = set(ports) - set(moned_ports)
