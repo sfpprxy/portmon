@@ -14,15 +14,15 @@ usage_disk = {}
 last_usage = {}
 
 data_file = Path(os.path.join(os.getcwd(), 'data'))
-print(data_file)
+data_path = str(data_file)
+print(data_path)
 if not data_file.is_file():
-    with open('data', 'w') as fd:
-        data = {}
+    with open(data_path, 'w') as fd:
         for p in ports:
-            data[p] = 0
-        fd.write(json.dumps(data))
+            usage_disk[p] = 0
+        fd.write(json.dumps(usage_disk))
 else:
-    with open(str(data_file)) as fd:
+    with open(data_path) as fd:
         usage_disk = json.load(fd)
 
 
@@ -72,16 +72,17 @@ def job():
 
         # global last_usage
         for port, out in usage.items():
-            diff = out - last_usage.get(port, 0)
+            last = last_usage.get(port, 0)
+            if out < last:
+                last_usage[port] = out
+            diff = out - last
             usage_disk[port] += diff
             last_usage[port] = out
 
         print(usage_disk)
-        # flush disk
-
-        # with open(filename, 'w') as out:
-        #     out.write(var + '\n')
-        time.sleep(2)
+        with open(data_path, 'w') as fd:
+            fd.write(json.dumps(usage_disk))
+        time.sleep(5)
 
 
 def get_statistic(port):
