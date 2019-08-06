@@ -84,7 +84,7 @@ def job():
 
         with open(data_path, 'w') as fd:
             fd.write(json.dumps(usage_disk))
-        time.sleep(3)
+        time.sleep(60)
 
 
 def get_statistic(port):
