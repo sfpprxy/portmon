@@ -5,6 +5,7 @@ import subprocess
 import threading
 import time
 import datetime
+import configparser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
@@ -19,7 +20,7 @@ rootLogger.addHandler(fileHandler)
 consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
-rootLogger.setLevel(logging.DEBUG)
+rootLogger.setLevel(logging.INFO)
 
 _FINISH = False
 
@@ -33,8 +34,19 @@ def assert_exit(cond, msg):
         _FINISH = True
 
 
-# TODO read ports from conf file
-ports = ['9999', '9998', '9997', '9996', '9995', '4422']
+config = configparser.ConfigParser()
+config.read(str(Path(os.path.join(home, 'portman.ini'))))
+serve_port = 9000
+ports = []
+try:
+    serve_port = int(config['DEFAULT']['serve_port'])
+except Exception:
+    logging.error('invalid serve_port')
+try:
+    ports = config['DEFAULT']['monitor_ports'].split(",")
+except Exception:
+    logging.error('invalid monitor_ports')
+
 usage_disk = {}
 
 data_file = Path(os.path.join(home, 'data'))
@@ -175,5 +187,5 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 jobt = threading.Thread(target=job, name='TrafficMonitorThread')
 jobt.start()
-httpd = HTTPServer(('0.0.0.0', 9000), SimpleHTTPRequestHandler)
+httpd = HTTPServer(('0.0.0.0', serve_port), SimpleHTTPRequestHandler)
 httpd.serve_forever()
