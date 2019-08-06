@@ -6,7 +6,7 @@ After=network.target iptables.service firewalld.service
 [Service]
 Type=simple
 #User=root
-ExecStart=/usr/bin/python3 /opt/portmon/portmon.py
+ExecStart=/usr/bin/python3 /usr/bin/portmon.py
 PIDFile=/var/run/portmon.pid
 Restart=always
 
