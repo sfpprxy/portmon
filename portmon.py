@@ -16,11 +16,13 @@ usage_last = {}
 data_file = Path(os.path.join(str(Path.home()), '.portmon', 'data'))
 data_path = str(data_file)
 if not data_file.is_file():
+    logging.error('debug no data file')
     with open(data_path, 'w') as fd:
         for p in ports:
             usage_disk[p] = 0
         fd.write(json.dumps(usage_disk))
 else:
+    logging.error('debug has data file')
     with open(data_path) as fd:
         usage_disk = json.load(fd)
 
