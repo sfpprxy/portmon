@@ -1,11 +1,24 @@
-import os
 import json
 import logging
+import os
+import subprocess
 import threading
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import subprocess
 from pathlib import Path
+
+home = str(Path(os.path.join(str(Path.home()), '.portmon')))
+logging.basicConfig(level=logging.INFO, filename=str(Path(os.path.join(home, 'portmon.log'))))
+_FINISH = False
+
+
+def assert_exit(cond, msg):
+    try:
+        assert cond
+    except AssertionError:
+        logging.error('AssertionError of ' + msg)
+        global _FINISH
+        _FINISH = True
 
 
 # TODO read ports from conf file
@@ -13,7 +26,7 @@ ports = ['9999', '9998', '9997', '9996', '9995']
 usage_disk = {}
 usage_last = {}
 
-data_file = Path(os.path.join(str(Path.home()), '.portmon', 'data'))
+data_file = Path(os.path.join(home, 'data'))
 data_path = str(data_file)
 if not data_file.is_file():
     logging.error('debug no data file')
@@ -34,7 +47,7 @@ def get_iptable():
 
 def add_ports_to_mon(unmoned_ports):
     for p in unmoned_ports:
-        assert isinstance(p, str)
+        assert_exit(isinstance(p, str), 'add_ports_to_mon')
         out = subprocess.check_output(['iptables', '-A', 'OUTPUT', '-p', 'tcp', '--sport', str(p)])
         if out:
             logging.error("add_ports_to_mon fail")
@@ -42,6 +55,8 @@ def add_ports_to_mon(unmoned_ports):
 
 def job():
     while True:
+        if _FINISH:
+            break
         table = get_iptable()
 
         first = 0
@@ -70,11 +85,11 @@ def job():
             so = o.split()
             out = so[1]
             port = so[-1][4:]
-            assert isinstance(port, str)
+            assert_exit(isinstance(port, str), '90')
             usage[port] = int(out)
 
         for port, out in usage.items():
-            assert isinstance(port, str)
+            assert_exit(isinstance(port, str), '94')
             last = usage_last.get(port, 0)
             if usage_disk[port] == 0:
                 usage_disk[port] = out
@@ -89,12 +104,11 @@ def job():
 
         with open(data_path, 'w') as fd:
             fd.write(json.dumps(usage_disk))
-        time.sleep(3)
+        time.sleep(2)
 
 
 def get_statistic(port):
-    assert isinstance(port, int)
-    assert isinstance(port, str)
+    assert_exit(isinstance(port, str), 'get_statistic')
     if not port:
         res = ""
         for p in ports:
