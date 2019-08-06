@@ -79,7 +79,7 @@ def add_ports_to_mon(unmoned_ports):
 
 
 def job():
-    interval = 3
+    interval = 60
     threshold = interval * 60 * 24
     counter = 0
     while True:
