@@ -4,11 +4,23 @@ import os
 import subprocess
 import threading
 import time
+import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 home = str(Path(os.path.join(str(Path.home()), '.portmon')))
-logging.basicConfig(level=logging.INFO, filename=str(Path(os.path.join(home, 'portmon.log'))))
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+rootLogger = logging.getLogger()
+
+fileHandler = logging.FileHandler("{0}/{1}.log".format(home, 'portmon'))
+fileHandler.setFormatter(logFormatter)
+rootLogger.addHandler(fileHandler)
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+rootLogger.addHandler(consoleHandler)
+rootLogger.setLevel(logging.DEBUG)
+
 _FINISH = False
 
 
@@ -22,22 +34,22 @@ def assert_exit(cond, msg):
 
 
 # TODO read ports from conf file
-ports = ['9999', '9998', '9997', '9996', '9995']
+ports = ['9999', '9998', '9997', '9996', '9995', '4422']
 usage_disk = {}
-usage_last = {}
 
 data_file = Path(os.path.join(home, 'data'))
 data_path = str(data_file)
 if not data_file.is_file():
-    logging.error('debug no data file')
+    logging.debug('no data file')
     with open(data_path, 'w') as fd:
         for p in ports:
             usage_disk[p] = 0
         fd.write(json.dumps(usage_disk))
 else:
-    logging.error('debug has data file')
+    logging.debug('exists data file')
     with open(data_path) as fd:
         usage_disk = json.load(fd)
+usage_last = {}
 
 
 def get_iptable():
@@ -54,6 +66,9 @@ def add_ports_to_mon(unmoned_ports):
 
 
 def job():
+    interval = 60
+    threshold = interval * 60 * 24
+    counter = 0
     while True:
         if _FINISH:
             break
@@ -66,9 +81,12 @@ def job():
 
         ofs = 0
         full_outputs_list = []
-        while table[first + ofs].strip():
-            full_outputs_list.append(table[first + ofs])
-            ofs += 1
+        if (first + ofs) < len(table):
+            while table[first + ofs].strip():
+                full_outputs_list.append(table[first + ofs])
+                ofs += 1
+                if (first + ofs) >= len(table):
+                    break
 
         moned_list = []
         moned_ports = []
@@ -78,6 +96,7 @@ def job():
                     moned_list.append(e)
                     moned_ports.append(p)
         unmoned_ports = set(ports) - set(moned_ports)
+        logging.debug(unmoned_ports)
         add_ports_to_mon(unmoned_ports)
 
         usage = {}
@@ -88,14 +107,18 @@ def job():
             assert_exit(isinstance(port, str), '90')
             usage[port] = int(out)
 
+        logging.debug('init usage_disk' + str(usage_disk))
         for port, out in usage.items():
             assert_exit(isinstance(port, str), '94')
             last = usage_last.get(port, 0)
-            if usage_disk[port] == 0:
+            if usage_disk.get(port, 0) == 0:
+                logging.debug('usage_disk.get({}, 0) == 0:'.format(port))
                 usage_disk[port] = out
             if out < last:
+                logging.debug('Port {} out < last:'.format(port))
                 usage_last[port] = out
             if last == 0:
+                logging.debug('Port {} last == 0:'.format(port))
                 usage_last[port] = usage_disk[port]
             else:
                 diff = out - last
@@ -104,7 +127,15 @@ def job():
 
         with open(data_path, 'w') as fd:
             fd.write(json.dumps(usage_disk))
-        time.sleep(2)
+        logging.debug(usage_disk)
+
+        if counter >= threshold:
+            with open(str(data_path + '_daily'), 'a+') as fd:
+                fd.write(str(datetime.datetime.now()) + json.dumps(usage_disk) + '\n')
+            counter = 0
+
+        counter += interval
+        time.sleep(interval)
 
 
 def get_statistic(port):
