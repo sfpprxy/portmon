@@ -49,6 +49,7 @@ except Exception as e:
     logging.error('invalid monitor_ports')
 
 usage_disk = {}
+usage_last = {}
 
 data_file = Path(os.path.join(home, 'data'))
 data_path = str(data_file)
@@ -62,7 +63,6 @@ else:
     logging.debug('exists data file')
     with open(data_path) as fd:
         usage_disk = json.load(fd)
-usage_last = {}
 
 
 def get_iptable():
@@ -79,7 +79,7 @@ def add_ports_to_mon(unmoned_ports):
 
 
 def job():
-    interval = 60
+    interval = 3
     threshold = interval * 60 * 24
     counter = 0
     while True:
@@ -123,18 +123,13 @@ def job():
         logging.debug('init usage_disk' + str(usage_disk))
         for port, out in usage.items():
             assert_exit(isinstance(port, str), '94')
-            last = usage_last.get(port, 0)
-            if usage_disk.get(port, 0) == 0:
-                logging.debug('usage_disk.get({}, 0) == 0:'.format(port))
+            # before reboot
+            if out >= usage_disk.get(port, 0):
+                logging.debug('out >= usage_disk.get({}, 0)'.format(port))
                 usage_disk[port] = out
-            if out < last:
-                logging.debug('Port {} out < last:'.format(port))
-                usage_last[port] = out
-            if last == 0:
-                logging.debug('Port {} last == 0:'.format(port))
-                usage_last[port] = usage_disk[port]
+            # after reboot
             else:
-                diff = out - last
+                diff = out - usage_last.get(port, 0)
                 usage_disk[port] += diff
                 usage_last[port] = out
 
