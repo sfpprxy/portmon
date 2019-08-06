@@ -34,6 +34,7 @@ def get_iptable():
 
 def add_ports_to_mon(unmoned_ports):
     for p in unmoned_ports:
+        assert isinstance(p, str)
         out = subprocess.check_output(['iptables', '-A', 'OUTPUT', '-p', 'tcp', '--sport', str(p)])
         if out:
             logging.error("add_ports_to_mon fail")
@@ -69,9 +70,11 @@ def job():
             so = o.split()
             out = so[1]
             port = so[-1][4:]
+            assert isinstance(port, str)
             usage[port] = int(out)
 
         for port, out in usage.items():
+            assert isinstance(port, str)
             last = usage_last.get(port, 0)
             if usage_disk[port] == 0:
                 usage_disk[port] = out
@@ -90,6 +93,8 @@ def job():
 
 
 def get_statistic(port):
+    assert isinstance(port, int)
+    assert isinstance(port, str)
     if not port:
         res = ""
         for p in ports:
