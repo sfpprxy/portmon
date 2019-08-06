@@ -36,7 +36,6 @@ def assert_exit(cond, msg):
 
 config = configparser.ConfigParser()
 config.read(str(Path(os.path.join(home, 'portmon.ini'))))
-logging.error(str(Path(os.path.join(home, 'portmon.ini'))))
 serve_port = 9000
 ports = []
 try:
