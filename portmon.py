@@ -35,16 +35,17 @@ def assert_exit(cond, msg):
 
 
 config = configparser.ConfigParser()
-config.read(str(Path(os.path.join(home, 'portman.ini'))))
+config.read(str(Path(os.path.join(home, 'portmon.ini'))))
+logging.error(str(Path(os.path.join(home, 'portmon.ini'))))
 serve_port = 9000
 ports = []
 try:
     serve_port = int(config['DEFAULT']['serve_port'])
-except Exception:
+except Exception as e:
     logging.error('invalid serve_port')
 try:
     ports = config['DEFAULT']['monitor_ports'].split(",")
-except Exception:
+except Exception as e:
     logging.error('invalid monitor_ports')
 
 usage_disk = {}
