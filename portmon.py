@@ -36,7 +36,7 @@ def assert_exit(cond, msg):
 
 config = configparser.ConfigParser()
 config.read(str(Path(os.path.join(home, 'portmon.ini'))))
-logging.error(str(Path(os.path.join(home, 'portmon.ini'))))
+logging.info("config path: " + str(Path(os.path.join(home, 'portmon.ini'))))
 serve_port = 9000
 ports = []
 try:
@@ -157,6 +157,7 @@ def get_statistic(port):
             gb = round(kb / 1024 / 1024, 2)
             rmb = gb
             res += "Port {} data usage: {}KB = {}GB => Bill: {}RMB\n".format(p, kb, gb, rmb)
+        logging.info(res)
         return res
     b = usage_disk[port]
     kb = int(b / 1024)
