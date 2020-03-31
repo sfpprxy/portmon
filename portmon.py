@@ -147,6 +147,7 @@ def job():
 
 
 def get_statistic(port):
+    logging.info("get_statistic of " + str(port))
     assert_exit(isinstance(port, str), 'get_statistic')
     if not port:
         res = ""
@@ -161,7 +162,9 @@ def get_statistic(port):
     kb = int(b / 1024)
     gb = round(kb / 1024 / 1024, 2)
     rmb = gb
-    return "Port {} data usage: {}KB = {}GB => Bill: {}RMB".format(port, kb, gb, rmb)
+    res = "Port {} data usage: {}KB = {}GB => Bill: {}RMB".format(port, kb, gb, rmb)
+    logging.info(res)
+    return res
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
