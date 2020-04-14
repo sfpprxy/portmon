@@ -188,4 +188,22 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 jobt = threading.Thread(target=job, name='TrafficMonitorThread')
 jobt.start()
 httpd = HTTPServer(('0.0.0.0', serve_port), SimpleHTTPRequestHandler)
-httpd.serve_forever()
+
+
+# restart httpd periodically to avoid httpd hang issue
+def refresh():
+    logging.info("refresh thread started...")
+    while True:
+        time.sleep(60)
+        logging.debug("restarting server...")
+        httpd.shutdown()
+
+
+refresht = threading.Thread(target=refresh, name='RefreshThread')
+refresht.start()
+
+
+while True:
+    httpd.serve_forever()
+    logging.debug("server down")
+    time.sleep(1)
