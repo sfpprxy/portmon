@@ -36,6 +36,7 @@ def assert_exit(cond, msg):
 
 config = configparser.ConfigParser()
 config.read(str(Path(os.path.join(home, 'portmon.ini'))))
+logging.info("config path: " + str(Path(os.path.join(home, 'portmon.ini'))))
 serve_port = 9000
 ports = []
 try:
@@ -146,6 +147,7 @@ def job():
 
 
 def get_statistic(port):
+    logging.info("get_statistic of " + str(port))
     assert_exit(isinstance(port, str), 'get_statistic')
     if not port:
         res = ""
@@ -155,12 +157,15 @@ def get_statistic(port):
             gb = round(kb / 1024 / 1024, 2)
             rmb = gb
             res += "Port {} data usage: {}KB = {}GB => Bill: {}RMB\n".format(p, kb, gb, rmb)
+        logging.info(res)
         return res
     b = usage_disk[port]
     kb = int(b / 1024)
     gb = round(kb / 1024 / 1024, 2)
     rmb = gb
-    return "Port {} data usage: {}KB = {}GB => Bill: {}RMB".format(port, kb, gb, rmb)
+    res = "Port {} data usage: {}KB = {}GB => Bill: {}RMB".format(port, kb, gb, rmb)
+    logging.info(res)
+    return res
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -183,4 +188,22 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 jobt = threading.Thread(target=job, name='TrafficMonitorThread')
 jobt.start()
 httpd = HTTPServer(('0.0.0.0', serve_port), SimpleHTTPRequestHandler)
-httpd.serve_forever()
+
+
+# restart httpd periodically to avoid httpd hang issue
+def refresh():
+    logging.info("refresh thread started...")
+    while True:
+        time.sleep(60)
+        logging.debug("restarting server...")
+        httpd.shutdown()
+
+
+refresht = threading.Thread(target=refresh, name='RefreshThread')
+refresht.start()
+
+
+while True:
+    httpd.serve_forever()
+    logging.debug("server down")
+    time.sleep(1)
