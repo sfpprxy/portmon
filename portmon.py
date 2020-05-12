@@ -10,7 +10,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 home = str(Path(os.path.join(str(Path.home()), '.portmon')))
-logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] {%(pathname)s:%(lineno)d} "
+                                 "[%(levelname)-5.5s]  %(message)s")
 rootLogger = logging.getLogger()
 
 fileHandler = logging.FileHandler("{0}/{1}.log".format(home, 'portmon'))
