@@ -2,11 +2,9 @@ import json
 import logging
 import os
 import subprocess
-import threading
 import time
 import datetime
 import configparser
-from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 home = str(Path(os.path.join(str(Path.home()), '.portmon')))
@@ -21,7 +19,7 @@ rootLogger.addHandler(fileHandler)
 consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
-rootLogger.setLevel(logging.INFO)
+rootLogger.setLevel(logging.DEBUG)
 
 _FINISH = False
 
@@ -49,21 +47,24 @@ try:
 except Exception as e:
     logging.error('invalid monitor_ports')
 
-usage_disk = {}
-usage_last = {}
+try:
+    usage_disk = {}
+    usage_last = {}
 
-data_file = Path(os.path.join(home, 'data'))
-data_path = str(data_file)
-if not data_file.is_file():
-    logging.debug('no data file')
-    with open(data_path, 'w') as fd:
-        for p in ports:
-            usage_disk[p] = 0
-        fd.write(json.dumps(usage_disk))
-else:
-    logging.debug('exists data file')
-    with open(data_path) as fd:
-        usage_disk = json.load(fd)
+    data_file = Path(os.path.join(home, 'data'))
+    data_path = str(data_file)
+    if not data_file.is_file():
+        logging.debug('no data file')
+        with open(data_path, 'w') as fd:
+            for p in ports:
+                usage_disk[p] = 0
+            fd.write(json.dumps(usage_disk))
+    else:
+        logging.debug('exists data file')
+        with open(data_path) as fd:
+            usage_disk = json.load(fd)
+except Exception as e:
+    logging.error(e, exc_info=True)
 
 
 def get_iptable():
@@ -150,7 +151,7 @@ def job():
 def get_statistic(port):
     logging.info("get_statistic of " + str(port))
     assert_exit(isinstance(port, str), 'get_statistic')
-    if not port:
+    if (not port) or (not port in ports):
         res = ""
         for p in ports:
             b = usage_disk[p]
@@ -169,42 +170,23 @@ def get_statistic(port):
     return res
 
 
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+try:
+    import pathlib
+    import sys
 
-    paths = {
-        '/': {'status': 200}
-    }
-    for p in ports:
-        paths['/' + p] = {'status': 200}
+    lib_path = pathlib.Path().absolute()
+    sys.path.insert(0, str(lib_path) + '/bottle')
 
-    def do_GET(self):
-        if self.path in self.paths:
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(get_statistic(self.path[1:]).encode('utf-8'))
-        else:
-            self.send_response(404)
+    from bottle import route, run
 
+    @route('/')
+    def index():
+        return get_statistic('')
 
-jobt = threading.Thread(target=job, name='TrafficMonitorThread')
-jobt.start()
-httpd = HTTPServer(('0.0.0.0', serve_port), SimpleHTTPRequestHandler)
+    @route('/<port>')
+    def port(port):
+        return get_statistic(port)
 
-
-# restart httpd periodically to avoid httpd hang issue
-def refresh():
-    logging.info("refresh thread started...")
-    while True:
-        time.sleep(60)
-        logging.debug("restarting server...")
-        httpd.shutdown()
-
-
-refresht = threading.Thread(target=refresh, name='RefreshThread')
-refresht.start()
-
-
-while True:
-    httpd.serve_forever()
-    logging.debug("server down")
-    time.sleep(1)
+    run(host='0.0.0.0', port=serve_port)
+except Exception as e:
+    logging.error(e, exc_info=True)
