@@ -171,11 +171,8 @@ def get_statistic(port):
 
 
 try:
-    import pathlib
     import sys
-
-    lib_path = pathlib.Path().absolute()
-    sys.path.insert(0, str(lib_path) + '/bottle')
+    sys.path.insert(0, '/usr/bin/bottle')
 
     from bottle import route, run
 
