@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import subprocess
+import threading
 import time
 import datetime
 import configparser
@@ -175,6 +176,9 @@ try:
     sys.path.insert(0, '/usr/bin/bottle')
 
     from bottle import route, run
+
+    jobt = threading.Thread(target=job, name='TrafficMonitorThread')
+    jobt.start()
 
     @route('/')
     def index():
