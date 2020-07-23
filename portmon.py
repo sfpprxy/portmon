@@ -73,6 +73,31 @@ def get_iptable():
     return output.decode("utf-8").splitlines()
 
 
+def parse_iptable():
+    """
+    :return in text form:
+     8686487 11140954791            tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp spt:9999
+     1499833  4273724219            tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp spt:9998
+          22        1092            tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            tcp spt:9997
+    """
+    table = get_iptable()
+    first = 0
+
+    for i, line in enumerate(table):
+        if line.startswith("Chain OUTPUT"):
+            first = i + 2
+
+    offset = 0
+    full_outputs_list = []
+    if (first + offset) < len(table):
+        while table[first + offset].strip():
+            full_outputs_list.append(table[first + offset])
+            offset += 1
+            if (first + offset) >= len(table):
+                break
+    return full_outputs_list
+
+
 def add_ports_to_mon(unmoned_ports):
     for p in unmoned_ports:
         assert_exit(isinstance(p, str), 'add_ports_to_mon')
@@ -88,22 +113,8 @@ def job():
     while True:
         if _FINISH:
             break
-        table = get_iptable()
-
-        first = 0
-        for i, line in enumerate(table):
-            if line.startswith("Chain OUTPUT"):
-                first = i + 2
-
-        ofs = 0
-        full_outputs_list = []
-        if (first + ofs) < len(table):
-            while table[first + ofs].strip():
-                full_outputs_list.append(table[first + ofs])
-                ofs += 1
-                if (first + ofs) >= len(table):
-                    break
-
+        full_outputs_list = parse_iptable()
+        # parse full_outputs_list
         moned_list = []
         moned_ports = []
         for e in full_outputs_list:
@@ -114,7 +125,7 @@ def job():
         unmoned_ports = set(ports) - set(moned_ports)
         logging.debug(unmoned_ports)
         add_ports_to_mon(unmoned_ports)
-
+        # parse monitored list
         usage = {}
         for o in moned_list:
             so = o.split()
@@ -139,12 +150,11 @@ def job():
         with open(data_path, 'w') as fd:
             fd.write(json.dumps(usage_disk))
         logging.debug(usage_disk)
-
+        # backup data daily
         if counter >= threshold:
             with open(str(data_path + '_daily'), 'a+') as fd:
                 fd.write(str(datetime.datetime.now()) + json.dumps(usage_disk) + '\n')
             counter = 0
-
         counter += interval
         time.sleep(interval)
 
