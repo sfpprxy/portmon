@@ -110,6 +110,7 @@ def job():
     interval = 60
     threshold = interval * 60 * 24
     counter = 0
+    connections = 0
     while True:
         if _FINISH:
             break
@@ -156,6 +157,14 @@ def job():
                 fd.write(str(datetime.datetime.now()) + json.dumps(usage_disk) + '\n')
             counter = 0
         counter += interval
+        # check blocking
+        ss_output = subprocess.check_output(['ss', 'sport', '=', serve_port])
+        connections_now = len(ss_output.decode("utf-8").split('\n')) - 2
+        if connections_now > 0 and connections > 0:
+            logging.info('blocking requests detected, restart server now...')
+            subprocess.check_output(['service', 'portmon', 'restart'])
+        connections = connections_now
+
         time.sleep(interval)
 
 
