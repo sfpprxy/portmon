@@ -1,26 +1,70 @@
+import code
+import configparser
+import datetime
 import json
 import logging
 import os
+import signal
 import subprocess
+import sys
 import threading
 import time
-import datetime
-import configparser
+import traceback
 from pathlib import Path
+
+
+def debug(sig, frame):
+    """Interrupt running process, and provide a python prompt for
+    interactive debugging."""
+    d={'_frame':frame}         # Allow access to frame object.
+    d.update(frame.f_globals)  # Unless shadowed by global
+    d.update(frame.f_locals)
+
+    i = code.InteractiveConsole(d)
+    message  = "Signal received : entering python shell.\nTraceback:\n"
+    message += ''.join(traceback.format_stack(frame))
+    i.interact(message)
+
+
+def listen_sig():
+    signal.signal(signal.SIGUSR1, debug)  # Register handler
+
+
+listen_sig()
 
 home = str(Path(os.path.join(str(Path.home()), '.portmon')))
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] {%(pathname)s:%(lineno)d} "
                                  "[%(levelname)-5.5s]  %(message)s")
 rootLogger = logging.getLogger()
+rootLogger.setLevel(logging.DEBUG)
 
 fileHandler = logging.FileHandler("{0}/{1}.log".format(home, 'portmon'))
 fileHandler.setFormatter(logFormatter)
 rootLogger.addHandler(fileHandler)
 
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logFormatter)
-rootLogger.addHandler(consoleHandler)
-rootLogger.setLevel(logging.DEBUG)
+
+class LoggerWriter:
+    def __init__(self, level):
+        # self.level is really like using log.debug(message)
+        # at least in my case
+        self.level = level
+
+    def write(self, message):
+        # if statement reduces the amount of newlines that are
+        # printed to the logger
+        if message != '\n':
+            self.level(message)
+
+    def flush(self):
+        # create a flush method so things can be flushed when
+        # the system wants to. Not sure if simply 'printing'
+        # sys.stderr is the correct way to do it, but it seemed
+        # to work properly for me.
+        self.level(sys.stderr)
+
+
+sys.stdout = LoggerWriter(rootLogger.info)
+sys.stderr = LoggerWriter(rootLogger.info)
 
 _FINISH = False
 
@@ -158,7 +202,7 @@ def job():
             counter = 0
         counter += interval
         # check blocking
-        ss_output = subprocess.check_output(['ss', 'sport', '=', serve_port])
+        ss_output = subprocess.check_output(['ss', 'sport', '=', str(serve_port)])
         connections_now = len(ss_output.decode("utf-8").split('\n')) - 2
         if connections_now > 0 and connections > 0:
             logging.info('blocking requests detected, restart server now...')
@@ -166,6 +210,14 @@ def job():
         connections = connections_now
 
         time.sleep(interval)
+
+
+def job_wrapper():
+    try:
+        logging.info('starting job thread...')
+        job()
+    except Exception as e:
+        logging.error(e, exc_info=True)
 
 
 def get_statistic(port):
@@ -196,7 +248,7 @@ try:
 
     from bottle import route, run
 
-    jobt = threading.Thread(target=job, name='TrafficMonitorThread')
+    jobt = threading.Thread(target=job_wrapper, name='TrafficMonitorThread')
     jobt.start()
 
     @route('/')
