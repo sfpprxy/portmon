@@ -98,6 +98,7 @@ try:
 
     data_file = Path(os.path.join(home, 'data'))
     data_path = str(data_file)
+    logging.info('ports to monitor: {}'.format(ports))
     if not data_file.is_file():
         logging.debug('no data file')
         with open(data_path, 'w') as fd:
@@ -108,6 +109,9 @@ try:
         logging.debug('exists data file')
         with open(data_path) as fd:
             usage_disk = json.load(fd)
+    for p in ports:
+        if p not in usage_disk:
+            usage_disk[p] = 0
 except Exception as e:
     logging.error(e, exc_info=True)
 
@@ -184,7 +188,7 @@ def job():
             assert_exit(isinstance(port, str), '94')
             # before reboot
             if out >= usage_disk.get(port, 0):
-                logging.debug('out >= usage_disk.get({}, 0)'.format(port))
+                logging.warning('out >= usage_disk.get({}, 0)'.format(port))
                 usage_disk[port] = out
             # after reboot
             else:
@@ -223,21 +227,22 @@ def job_wrapper():
 def get_statistic(port):
     logging.info("get_statistic of " + str(port))
     assert_exit(isinstance(port, str), 'get_statistic')
-    if (not port) or (not port in ports):
+    if (not port) or (port not in ports):
         res = ""
         for p in ports:
-            b = usage_disk[p]
-            kb = int(b / 1024)
-            gb = round(kb / 1024 / 1024, 2)
-            rmb = gb
-            res += "Port {} data usage: {}KB = {}GB => Bill: {}RMB\n".format(p, kb, gb, rmb)
+            if p in usage_disk:
+                b = usage_disk[p]
+                kb = int(b / 1024)
+                gb = round(kb / 1024 / 1024, 2)
+                rmb = gb
+                res += "Port {} data usage: {}KB = {}GB\n".format(p, kb, gb)
         logging.info(res)
         return res
     b = usage_disk[port]
     kb = int(b / 1024)
     gb = round(kb / 1024 / 1024, 2)
     rmb = gb
-    res = "Port {} data usage: {}KB = {}GB => Bill: {}RMB".format(port, kb, gb, rmb)
+    res = "Port {} data usage: {}KB = {}GB".format(port, kb, gb)
     logging.info(res)
     return res
 
